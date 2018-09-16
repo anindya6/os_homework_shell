@@ -322,7 +322,10 @@ int parse_args(char **args, struct history *hist)
 	}
 	else if(strcmp(args[0], "exit") == 0)
 	{
-		return 0;
+		if (args[1] != NULL)
+			fprintf(stderr, "error: %s\n", "Too Many Arguments to Exit Command");
+		else
+			return 0;
 	}
 	else if (strcmp(args[0], "@search_str_not_found") == 0)
 	{
