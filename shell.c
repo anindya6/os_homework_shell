@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 
@@ -44,11 +45,29 @@ int parse_args(char **args, struct history *hist);
 int execute_non_builtin(char **args)
 {
 	int status;
+	int i;
 	if (fork() == 0)
-        execv(args[0], args);
+	{
+        i = execv(args[0], args);
+        if (i == -1)
+        	fprintf(stderr, "error: %s\n", strerror(errno));
+        return 0;
+	}
     else
         wait(&status);
-    return 0;
+    return 1;
+}
+
+
+int is_number(char *str)
+{
+	int i;
+	for (i=0; str[i]!= '\0'; i++)
+    {
+        if (isdigit(str[i]) == 0) 
+            return 0;
+    }
+    return 1;
 }
 
 
@@ -60,7 +79,7 @@ int is_prefix(const char *prefix, const char *str)
 
 void add_command_to_history(char *command, struct history *hist)
 {
-	if(hist->history_size == 5)
+	if(hist->history_size == 100)
 	{
 		hist->start = hist->start->next;
 		hist->history_size--;
@@ -109,14 +128,26 @@ void free_entire_history(struct history *hist)
 }
 
 
-void show_history(struct history *hist)
+void show_history(struct history *hist, char **args)
 {
+	int skip_entries;
+	if (args[1] != NULL && !is_number(args[1]))
+	{
+		fprintf(stderr, "error: %s\n", "Invalid argument for history command");
+		return;
+	}
+	else if (args[1] == NULL)
+		skip_entries = 0;
+	else
+		skip_entries = hist->history_size - atoi(args[1]);
 	struct history_entry *iterator = NULL;
 	iterator = hist->start;
 	while(iterator->next != NULL)
 	{
 		iterator = iterator->next;
-		printf("%d %s\n", iterator->index, iterator->command);
+		if(skip_entries <= 0)
+			printf("%d %s\n", iterator->index, iterator->command);
+		skip_entries--;
 	}
 }
 
@@ -147,7 +178,12 @@ void change_directory(char **args)
 {
 	if (args[1] == NULL)
 	{
-		fprintf(stderr, "error: %s\n", "Missing Args for cd command");
+		fprintf(stderr, "error: %s\n", "Missing directory argument for cd command");
+		return;
+	}
+	else if (args[2] != NULL)
+	{
+		fprintf(stderr, "error: %s\n", "Too many args for cd command");
 		return;
 	}
 	int status = chdir(args[1]); 
@@ -218,6 +254,23 @@ void print_args(char **args)
 }
 
 
+void append_args_to_command(char *cmd, char **args)
+{
+	int i = 1;
+	const char *space = " ";
+	while(args[i]!=NULL)
+	{
+		char *temp = (char *)malloc(sizeof(space)+sizeof(args[i]));
+		strcpy(temp, space);
+		strcat(temp, args[i]);
+		cmd = realloc(cmd, sizeof(cmd)+sizeof(temp));
+		strcat(cmd, temp);
+		i++;
+		free(temp);
+	}
+}
+
+
 int parse_command(char *cmd, struct history *hist)
 {
 	char **args;
@@ -236,17 +289,23 @@ int parse_args(char **args, struct history *hist)
 		return 1;
 	else if (strcmp(args[0], "history") == 0)
 	{
-		if (args[1]!=NULL && strcmp(args[1], "-c") == 0)
+		if (args[1] != NULL && strcmp(args[1], "-c") == 0)
 			clear_history(hist);
+		else if (args[1] != NULL && args[2] != NULL)
+			fprintf(stderr, "error: %s\n", "Too many arguments for history command");
 		else
-			show_history(hist);
+			show_history(hist, args);
 	}
 	else if (strcmp(args[0], "!!") == 0)
 	{
 		if(hist->history_size == 0)
 			return 1;
 		else
-			return parse_command(hist->last->command, hist);
+		{
+			char *cmd = (char *)malloc(sizeof(hist->last->command));
+			strcpy(cmd, hist->last->command);
+			return parse_command(cmd, hist);
+		}
 	}
 	else if (args[0][0] == '!')
 	{
@@ -254,6 +313,7 @@ int parse_args(char **args, struct history *hist)
 		strcpy(search_str, args[0]);
 		search_str = search_str + 1;
 		char *cmd = search_history(search_str, hist);
+		append_args_to_command(cmd, args);
 		return parse_command(cmd, hist);
 	}
 	else if (strcmp(args[0], "cd") == 0)
@@ -270,7 +330,7 @@ int parse_args(char **args, struct history *hist)
 	}
 	else
 	{
-		execute_non_builtin(args);
+		return execute_non_builtin(args);
 	}
 	return 1;
 }
