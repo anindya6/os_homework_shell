@@ -2,3 +2,5 @@ References:
 https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
 https://www.geeksforgeeks.org/linked-list-set-1-introduction/
 https://stackoverflow.com/questions/4770985/how-to-check-if-a-string-starts-with-another-string-in-c
+https://linux.die.net/man/3/exec
+https://stackoverflow.com/questions/28507950/calling-ls-with-execv
