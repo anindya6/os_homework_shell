@@ -6,6 +6,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define READ_END 0
+#define WRITE_END 1
 
 struct history_entry
 {
@@ -61,7 +63,7 @@ char **split_on_first_occurence(char *cmd, char delimiter)
     char *first_occurence = pointer_to_first_occurence(cmd, delimiter);
     l1 = strlen(cmd);
     l2 = strlen(first_occurence);
-    char *pre_occurence = (char *)malloc(1+sizeof(cmd));
+    char *pre_occurence = (char *)malloc(sizeof(cmd));
     strncpy(pre_occurence, cmd, l1-l2);
     pre_occurence[l1-l2]= '\0';
     char **split = (char**)malloc(2*sizeof(char *));
@@ -80,8 +82,6 @@ int piped_command(char *cmd, struct history *hist)
     int fd[2];
     pipe(fd);
     pid = fork();
-    int READ_END = 0;
-    int WRITE_END = 1;
     if(pid==0)
     {
         dup2(fd[WRITE_END], STDOUT_FILENO);
@@ -279,7 +279,6 @@ char **input_tokenizer(char *buffer, char *delimiters)
     while(arg != NULL)
     {
         args[index++] = arg;
-        //printf("here %s ", token);
         if (index >= max_args-1)
             break;
         arg = strtok(NULL, delimiters);
@@ -355,7 +354,6 @@ int parse_command(char *cmd, struct history *hist, int mode)
     }
     args = input_tokenizer(cmd, " ");
     int flag = parse_args(args, hist);
-    //free(args);
     return flag;
 }
 
