@@ -9,6 +9,7 @@
 #define READ_END 0
 #define WRITE_END 1
 
+
 struct history_entry
 {
     int index;
@@ -160,7 +161,7 @@ void add_command_to_history(char *command, struct history *hist)
     struct history_entry* current_entry = NULL;
     current_entry = (struct history_entry*)malloc(sizeof(struct history_entry));
     current_entry->index = hist->last->index + 1;
-    current_entry->command = (char *)malloc(sizeof(command));
+    current_entry->command = (char *)malloc(1+strlen(command));
     strcpy(current_entry->command, command);
     current_entry->next = NULL;
     hist->last->next = current_entry;
@@ -271,6 +272,7 @@ char **input_tokenizer(char *buffer, char *delimiters)
     /* The final token is chosen to be null.
     This done so that the token parser knows when to stop.
     So the actual number of max tokens will be max_tokens-1
+    execv calls require this list to be null terminated
     */
     char **args = malloc(max_args*sizeof(char *));
     char *arg;
@@ -293,23 +295,29 @@ char *get_input_cmd()
     int index = 0;
     int initial_buffer_size = 100;
     int current_buffer_size = initial_buffer_size;
-    char *buffer = malloc(current_buffer_size*sizeof(char));
+    char *cmd = malloc(current_buffer_size*sizeof(char));
     for(;;)
     {
         char c = getchar();
         if (c!=EOF && c!='\n')
         {
-            buffer[index++] = c;
+            cmd[index++] = c;
             if (index >= current_buffer_size)
             {
                 current_buffer_size += initial_buffer_size;
-                buffer = realloc(buffer, current_buffer_size);
+                cmd = realloc(cmd, current_buffer_size);
             }
+        }
+        else if (c == EOF)
+        {
+            cmd[0] = EOF;
+            cmd[1] = '\0';
+            return cmd;
         }
         else
         {
-            buffer[index] = '\0';
-            return buffer;
+            cmd[index] = '\0';
+            return cmd;
         }
     }
 }
@@ -423,7 +431,10 @@ void continuous_run()
     {
         printf("$");
         cmd = get_input_cmd();
-        flag = parse_command(cmd, hist, 1);
+        if (cmd[0] == EOF)
+            flag = 0;
+        else
+            flag = parse_command(cmd, hist, 1);
         free(cmd);
     }
     free_entire_history(hist);
