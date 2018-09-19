@@ -5,3 +5,7 @@ https://stackoverflow.com/questions/4770985/how-to-check-if-a-string-starts-with
 https://linux.die.net/man/3/exec
 https://stackoverflow.com/questions/33884291/pipes-dup2-and-exec
 https://stackoverflow.com/questions/28507950/calling-ls-with-execv
+https://www.paradoxlabs.com/blog/mobile-vs-desktop-10-key-differences/
+https://en.wikipedia.org/wiki/Interrupt
+https://www.geeksforgeeks.org/c-program-replace-word-text-another-given-word/
+https://en.wikibooks.org/wiki/Operating_System_Design/Kernel_Architecture/Microkernel

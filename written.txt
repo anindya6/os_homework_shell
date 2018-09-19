@@ -11,6 +11,15 @@ h. Access I/O device.
 
 A1.6
 a, c, e, f, h
+a. Timer controls scheduling. It is essential for this to be privileged.
+c. Clearing memory involves checking if the memory in question belongs to the process
+	making the request.
+e. Turning off interrupts is definitely a dangerous prospect as all change of flows
+	are effectively removed, and this can lead to serious errors.
+f. Device status tables contains entries for each device, identifying its type, address
+	and state. These things need to be verified by the OS before they are changed.
+h. Reading/Writing from I/O devices may affect other processes.
+(g) should not be privileged as if the switch was privileged, no user program could do it.
 
 
 
@@ -96,9 +105,34 @@ What are the advantages and disadvantages of using the same systemcall
 interface for manipulating both files and devices?
 
 
+A1.16
+Disadvantage: Typically the same syscalls for files and devices will possibly limit the functionality of devices
+which come with some form of enhanced capability (in terms of features or performance), more than simple I/O.
+
+Advantage:
+> Devices can be accessed like a regular file in the file system.
+> File descriptors can be opened and closed at will, including devices (such as I/O).
+> Is advantageous for programming as new devices can easily handle both devices and files in the same manner
+  because of this interface
+
+
 
 Q2.21
 What is the main advantage of the microkernel approach to system
 design? How do user programs and system services interact in a
 microkernel architecture? What are the disadvantages of using the
 microkernel approach?
+
+
+A2.21
+Advantages:
+> The system is more stable, as a failing server stops a single program, as opposed to crashing the whole kernel.
+> It follows the principle of least privilege, as most operations will be performed in user mode as opposed to root mode.
+> Few operations actually involve modifying the kernel itself.
+
+User programs and system services interact via shared memory.
+
+Disadvantages:
+> Part of the system state is lost if a server fails. If a server associated with a file fails, then all changes
+to that file will be lost. Database checkpointing is employed to get around this.
+> Performance loss because of context switches, to move data between applications and servers.

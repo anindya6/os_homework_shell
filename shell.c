@@ -1,14 +1,4 @@
-#include <sys/wait.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-
-#define READ_END 0
-#define WRITE_END 1
-#define MAX_PIPES 50
+#include "shell.h"
 
 
 struct history_entry {
@@ -41,10 +31,6 @@ struct history *initialize_history()
 }
 
 
-int parse_command(char *cmd, struct history *hist, int mode);
-int parse_args(char **args, struct history *hist);
-
-
 char *pointer_to_first_occurence(char *cmd, char delimiter)
 {
 	int l = strlen(cmd);
@@ -60,7 +46,7 @@ char *pointer_to_first_occurence(char *cmd, char delimiter)
 
 char **split_on_first_occurence(char *cmd, char delimiter)
 {
-	int i, j, l1, l2, size;
+	int l1, l2;
 	char *first_occurence = pointer_to_first_occurence(cmd, delimiter);
 	char *pre_occurence = (char *)malloc(1 + strlen(cmd));
 	char **split = (char **)malloc(2*sizeof(char *));
@@ -82,6 +68,7 @@ int piped_command(char *cmd, struct history *hist)
 	char *cmd2 = split[1];
 	pid_t pid;
 	int fd[2];
+	int status;
 
 	pipe(fd);
 	pid = fork();
@@ -90,23 +77,23 @@ int piped_command(char *cmd, struct history *hist)
 		close(fd[READ_END]);
 		close(fd[WRITE_END]);
 		parse_command(cmd1, hist, 0);
+		free(cmd1);
+		free(split);
 		return 0;
-	} else {
-		pid = fork();
-		if (pid == 0) {
-			dup2(fd[READ_END], STDIN_FILENO);
-			close(fd[WRITE_END]);
-			close(fd[READ_END]);
-			parse_command(cmd2, hist, 0);
-			return 0;
-		} else {
-			int status;
-
-			close(fd[READ_END]);
-			close(fd[WRITE_END]);
-			waitpid(pid, &status, 0);
-		}
 	}
+	pid = fork();
+	if (pid == 0) {
+		dup2(fd[READ_END], STDIN_FILENO);
+		close(fd[WRITE_END]);
+		close(fd[READ_END]);
+		parse_command(cmd2, hist, 0);
+		free(split);
+		return 0;
+	}
+	free(split);
+	close(fd[READ_END]);
+	close(fd[WRITE_END]);
+	waitpid(pid, &status, 0);
 	return 1;
 }
 
@@ -123,8 +110,8 @@ int execute_non_builtin(char **args)
 		if (i == -1)
 			fprintf(stderr, "error: %s\n", strerror(errno));
 		return 0;
-	} else
-		waitpid(pid, &status, 0);
+	}
+	waitpid(pid, &status, 0);
 	return 1;
 }
 
@@ -155,7 +142,8 @@ void add_command_to_history(char *command, struct history *hist)
 		hist->start = hist->start->next;
 		hist->history_size--;
 	}
-	current_entry = (struct history_entry *)malloc(sizeof(struct history_entry));
+	current_entry = (struct history_entry *)
+				malloc(sizeof(struct history_entry));
 	current_entry->index = hist->last->index + 1;
 	current_entry->command = (char *)malloc(1+strlen(command));
 	strcpy(current_entry->command, command);
@@ -204,7 +192,8 @@ void show_history(struct history *hist, char **args)
 	struct history_entry *iterator = NULL;
 
 	if (args[1] != NULL && !is_number(args[1])) {
-		fprintf(stderr, "error: %s\n", "Invalid argument for history command");
+		fprintf(stderr, "error: %s\n",
+				"Invalid argument for history command");
 		return;
 	} else if (args[1] == NULL)
 		skip_entries = 0;
@@ -223,7 +212,7 @@ void show_history(struct history *hist, char **args)
 char *search_history(char *search_str, struct history *hist)
 {
 	const char *failure = "@search_str_not_found";
-	char *command = (char *)malloc(sizeof(failure));
+	char *command = (char *)malloc(1 + strlen(failure));
 	struct history_entry *iterator;
 
 	strcpy(command, failure);
@@ -233,7 +222,8 @@ char *search_history(char *search_str, struct history *hist)
 	while (iterator->next != NULL) {
 		iterator = iterator->next;
 		if (is_prefix(search_str, iterator->command)) {
-			command = (char *)malloc(1 + strlen(iterator->command));
+			command = (char *)
+					malloc(1 + strlen(iterator->command));
 			strcpy(command, iterator->command);
 		}
 	}
@@ -244,7 +234,9 @@ char *search_history(char *search_str, struct history *hist)
 void change_directory(char **args)
 {
 	if (args[1] == NULL) {
-		fprintf(stderr, "error: %s\n", "Missing directory argument for cd command");
+		fprintf(stderr,
+			"error: %s\n",
+			"Missing directory argument for cd command");
 		return;
 	} else if (args[2] != NULL) {
 		fprintf(stderr, "error: %s\n", "Too many args for cd command");
@@ -297,12 +289,12 @@ char *get_input_cmd()
 				current_buffer_size += initial_buffer_size;
 				cmd = realloc(cmd, current_buffer_size);
 			}
-		} else if (c == EOF) {
-			cmd[0] = EOF;
-			cmd[1] = '\0';
-			return cmd;
 		} else {
-			cmd[index] = '\0';
+			if (c == EOF) {
+				cmd[0] = EOF;
+				cmd[1] = '\0';
+			} else
+				cmd[index] = '\0';
 			return cmd;
 		}
 	}
@@ -337,8 +329,8 @@ void print_args(char **args)
 int is_command_non_empty(char *cmd)
 {
 	int i;
-	for (i = 0; i < strlen(cmd); i++)
-	{
+
+	for (i = 0; i < strlen(cmd); i++) {
 		if (cmd[i] != ' ')
 			return 1;
 	}
@@ -349,6 +341,7 @@ int is_command_non_empty(char *cmd)
 char *last_command(struct history *hist)
 {
 	char *cmd = (char *)malloc(1 + strlen(hist->last->command));
+
 	strcpy(cmd, hist->last->command);
 	return cmd;
 }
@@ -358,8 +351,8 @@ char *find_pattern_to_match(const char *s)
 {
 	int i = 0;
 	char *pattern = (char *)malloc(1 + strlen(s));
-	while(s[i] != ' ' && s[i] != '\0')
-	{
+
+	while (s[i] != ' ' && s[i] != '\0') {
 		pattern[i] = s[i];
 		i++;
 	}
@@ -369,71 +362,32 @@ char *find_pattern_to_match(const char *s)
 
 
 
-char *replaceWord(const char *s, const char *oldW, const char *newW)
+char *replace_pattern
+	(const char *s, const char *old_word, const char *new_word)
 {
-	char *result;
-	int i, cnt = 0;
-	int newWlen = strlen(newW);
-	int oldWlen = strlen(oldW);
- 
-	for (i = 0; s[i] != '\0'; i++)
-	{
-		if (strstr(&s[i], oldW) == &s[i]) {
-		cnt++;
-		i += oldWlen - 1;
+	char *new_s;
+	int i, count = 0;
+	int new_word_len = strlen(new_word);
+	int old_word_len = strlen(old_word);
+
+	for (i = 0; s[i] != '\0'; i++) {
+		if (strstr(s+i, old_word) == s+i) {
+			count++;
+			i += old_word_len - 1;
 		}
 	}
-	result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
- 
+	new_s = (char *)malloc(i + count * (new_word_len - old_word_len) + 1);
 	i = 0;
 	while (*s) {
-		if (strstr(s, oldW) == s) {
-			strcpy(&result[i], newW);
-			i += newWlen;
-			s += oldWlen;
+		if (strstr(s, old_word) == s) {
+			strcpy(new_s + i, new_word);
+			i += new_word_len;
+			s += old_word_len;
 		} else
-			result[i++] = *s++;
+			new_s[i++] = *s++;
 	}
-	result[i] = '\0';
-	return result;
-}
-
-
-int parse_command(char *cmd, struct history *hist, int mode)
-{
-	char **args;
-	int flag;
-	int flag_2 = 1;
-	int i;
-	char *structured_cmd;
-	char *ptr;
-	char *search_str;
-	char *match;
-
-	ptr = strstr(cmd, "!!");
-	if (ptr != NULL && hist->history_size == 0) {
-		fprintf(stderr, "error: %s\n", "History is empty");
-		return 1;
-	}
-	if (ptr != NULL)
-		cmd = replaceWord(cmd, "!!", last_command(hist));
-	ptr = strstr(cmd, "!");
-	if (ptr != NULL) {
-		search_str = find_pattern_to_match(ptr);
-		match = search_history(search_str + 1, hist);
-		if (strcmp(match, "@search_str_not_found") == 0) {
-			fprintf(stderr, "error: %s\n", "Search String Not Found in History");
-			return 1;
-		}
-		cmd = replaceWord(cmd, search_str, match);
-	}
-	if (is_command_non_empty(cmd) && mode != 0)
-		add_command_to_history(cmd, hist);
-	if(pointer_to_first_occurence(cmd, '|') != NULL)
-		return piped_command(cmd, hist);
-	args = input_tokenizer(cmd, " ");
-	flag = parse_args(args, hist);
-	return flag;
+	new_s[i] = '\0';
+	return new_s;
 }
 
 
@@ -445,19 +399,63 @@ int parse_args(char **args, struct history *hist)
 		if (args[1] != NULL && strcmp(args[1], "-c") == 0)
 			clear_history(hist);
 		else if (args[1] != NULL && args[2] != NULL)
-			fprintf(stderr, "error: %s\n", "Too many arguments for history command");
+			fprintf(stderr,
+				"error: %s\n",
+				"Too many arguments for history command");
 		else
 			show_history(hist, args);
 	} else if (strcmp(args[0], "cd") == 0)
 		change_directory(args);
 	else if (strcmp(args[0], "exit") == 0) {
 		if (args[1] != NULL)
-			fprintf(stderr, "error: %s\n", "Too Many Arguments to Exit Command");
+			fprintf(stderr,
+				"error: %s\n",
+				"Too Many Arguments to Exit Command");
 		else
 			return 0;
 	} else
 		return execute_non_builtin(args);
 	return 1;
+}
+
+
+int parse_command(char *cmd, struct history *hist, int mode)
+{
+	char **args;
+	int flag;
+	char *ptr;
+	char *search_str;
+	char *match;
+
+	ptr = strstr(cmd, "!!");
+	if (ptr != NULL && hist->history_size == 0) {
+		fprintf(stderr, "error: %s\n", "History is empty");
+		return 1;
+	}
+	if (ptr != NULL)
+		cmd = replace_pattern(cmd, "!!", last_command(hist));
+	ptr = strstr(cmd, "!");
+	if (ptr != NULL) {
+		search_str = find_pattern_to_match(ptr);
+		match = search_history(search_str + 1, hist);
+		if (strcmp(match, "@search_str_not_found") == 0) {
+			fprintf(stderr,
+				"error: %s\n",
+				"Search String Not Found in History");
+			return 1;
+		}
+		cmd = replace_pattern(cmd, search_str, match);
+		free(search_str);
+		free(match);
+	}
+	if (is_command_non_empty(cmd) && mode != 0)
+		add_command_to_history(cmd, hist);
+	if (pointer_to_first_occurence(cmd, '|') != NULL)
+		return piped_command(cmd, hist);
+	args = input_tokenizer(cmd, " ");
+	flag = parse_args(args, hist);
+	free(args);
+	return flag;
 }
 
 
