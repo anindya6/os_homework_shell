@@ -1,1 +1,104 @@
+Q1.6
+Which of the following instructions should be privileged?
+a. Set value of timer.
+b. Read the clock.
+c. Clear memory.
+d. Issue a trap instruction.
+e. Turn off interrupts.
+f. Modify entries in device-status table.
+g. Switch from user to kernel mode.
+h. Access I/O device.
 
+A1.6
+a, c, e, f, h
+
+
+
+Q1.14
+Under what circumstances would a user be better off using a timesharing
+system than a PC or a single-user workstation?
+
+
+A1.14
+Speed: If the time-sharing system is associated with a fast server, it will
+typically be orders of magnitude faster than performing those computations
+on a PC. When running a computationally intensive task, it makes sense to
+use the time sharing system.
+
+Costs: If the PC has significant maintenance costs that the user is responsible
+for, it makes sense to used the shared environment and responsibilities of the
+time sharing system (typically maintenance costs for these are handled by the company
+that provisioned them).
+
+Convenience: Suppose the user is on the move a lot and prefers to travel light.
+A time sharing system that he can ssh into and have access to all his files is a
+great option in that case, which he may do from any internet cafe (or even with
+his smartphone, using a terminal app, but it is debatable whether the phone then counts as
+a PC). With the advent of ultraportables however, this may seem a less important point.
+
+
+
+Q1.19
+What is the purpose of interrupts? How does an interrupt differ from a
+trap? Can traps be generated intentionally by a user program? If so, for
+what purpose?
+
+
+A1.19
+(Note: As per my understanding, interrupts can refer to both hardware and software
+interrupts, where the latter is typically called a trap. For the purpose of this
+question, I am taking interrupt to refer to hardware interrupt, and trap to refer
+to software interrupt)
+Interrupts are signals emitted by hardware to notify the processor that an event needs
+attention. These notifications are typically done with interrupt flags in the chip. 
+It changes the flow of the system by introducing the interrupt handling in between
+whatever was previously being executed. An interrupt handler subroutine is invoked
+before control is returned to the interrupted instruction.
+The main difference between a trap and an interrupt is that traps are software-generated.
+Traps can be generated intentionally within a user program. The purpose of this is typically
+to call operating system functions or catching exceptions that could not be handled within
+the program itself, typically involving the ALU (Arithmetic Logic Unit).
+
+
+
+Q1.27
+Describe some of the challenges of designing operating systems for
+mobile devices compared with designing operating systems for traditional
+PCs.
+A1.27
+UI: Clearly, user interface is one of the core concerns in distinguishing a mobile OS from
+a desktop OS. Desktop OSes typically have multiple input methods, a pointing object (mouse),
+a keyboard, sometimes a touchscreen too. Mobile phones typically do not have a pointing object
+aside from the finger itself, which is typically imprecise in comparison to a mouse (if you use
+a Galaxy Note device, you can clearly see the advantages of a precise stylus for input), and
+these days, physical keyboards are rarely a thing (barring exceptions like the BlackBerry KeyOne).
+The content on-screen should be adjustable to a minimized view where the virtual keyboard occupies
+a portion of the screen. Microsoft's surface devices typically run into a lot of hiccups when using
+them sans keyboard, which obviates the fact that adapting a desktop OS for mobile isn't easy.
+
+Resources: Mobile devices are typically constrained by resources. Computing power is typically limited
+to short bursts (sustained performance require fans, that mobile devices often do not have). RAM and storage,
+while present in significant quantities today, are usually significantly slower than their desktop counterparts.
+Apple has an advantage in this scenario, where they can control the Operating System specifications according
+to their own devices, while Google needs to make each version of its operating system swift on a wide range
+of hardware.
+
+Battery life: Mobile devices are also constrained by their battery life. Ultraportables can be considered a part
+of mobile devices for the purposes of this discussion, as they require to have significant battery life too. Desktops
+on the other hand are constantly plugged in.
+
+I/O: Mobile devices are typically constrained by the I/O and peripherals they support as well.
+
+
+
+Q2.16
+What are the advantages and disadvantages of using the same systemcall
+interface for manipulating both files and devices?
+
+
+
+Q2.21
+What is the main advantage of the microkernel approach to system
+design? How do user programs and system services interact in a
+microkernel architecture? What are the disadvantages of using the
+microkernel approach?
