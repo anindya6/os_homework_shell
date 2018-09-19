@@ -1,36 +1,28 @@
 Name: Anindya Shankar Bhandari
-
-
 UNI: ab4516
 
 
-
-
 This is the solution to HW1 for W4118 Operating Systems.
-
 The shell supports the following built-ins:
-
-- `history [-c or number]`
-- `!!`
-- `!/`
-- `cd [dir]`
-- `exit`
-
-
+- history [-c or number]
+- !!
+- !/
+- cd [dir]
+- exit
+All executables can be run using the path specified (relative or full).
 
 !! and !/ are string pattern replace operations similar to how bash does it.
 Therefore they can be placed between commands or as in-between args.
 
-
 Input is taken character by character, and is realloced when the input is too large, this
 ensures that the input can be as long as required.
 
-
 Ctrl-D exits the shell. As does `exit`.
 
-
 Run make to generate w4118_sh.
-
+Run make clean to get rid of the binary.
 
 Written answers are in written.txt.
+
+checkpatch.pl shows 0 errors, 0 warnings.
 
