@@ -222,6 +222,7 @@ char *search_history(char *search_str, struct history *hist)
 	while (iterator->next != NULL) {
 		iterator = iterator->next;
 		if (is_prefix(search_str, iterator->command)) {
+			free(command);
 			command = (char *)
 					malloc(1 + strlen(iterator->command));
 			strcpy(command, iterator->command);
@@ -249,22 +250,22 @@ void change_directory(char **args)
 }
 
 
+
 char **input_tokenizer(char *buffer, char *delimiters)
 {
-	int max_args = 31;
 	/* The final token is chosen to be null.
 	* This done so that the token parser knows when to stop.
 	* So the actual number of max tokens will be max_tokens-1
 	* execv calls require this list to be null terminated
 	*/
-	char **args = malloc(max_args*sizeof(char *));
+	char **args = malloc(MAX_ARGS*sizeof(char *));
 	char *arg;
 	int index = 0;
 
 	arg = strtok(buffer, delimiters);
 	while (arg != NULL) {
 		args[index++] = arg;
-		if (index >= max_args-1)
+		if (index >= MAX_ARGS-1)
 			break;
 		arg = strtok(NULL, delimiters);
 	}
@@ -423,22 +424,31 @@ int parse_command(char *cmd, struct history *hist, int mode)
 {
 	char **args;
 	int flag;
+	int flag_2 = 0;
 	char *ptr;
 	char *search_str;
 	char *match;
+	char *copy;
 
 	ptr = strstr(cmd, "!!");
 	if (ptr != NULL && hist->history_size == 0) {
 		fprintf(stderr, "error: %s\n", "History is empty");
 		return 1;
 	}
-	if (ptr != NULL)
-		cmd = replace_pattern(cmd, "!!", last_command(hist));
+	if (ptr != NULL) {
+		char *last_cmd = last_command(hist);
+
+		cmd = replace_pattern(cmd, "!!", last_cmd);
+		free(last_cmd);
+		flag_2 = 1;
+	}
 	ptr = strstr(cmd, "!");
 	if (ptr != NULL) {
 		search_str = find_pattern_to_match(ptr);
 		match = search_history(search_str + 1, hist);
 		if (strcmp(match, "@search_str_not_found") == 0) {
+			free(search_str);
+			free(match);
 			fprintf(stderr,
 				"error: %s\n",
 				"Search String Not Found in History");
@@ -447,14 +457,20 @@ int parse_command(char *cmd, struct history *hist, int mode)
 		cmd = replace_pattern(cmd, search_str, match);
 		free(search_str);
 		free(match);
+		flag_2 = 1;
 	}
 	if (is_command_non_empty(cmd) && mode != 0)
 		add_command_to_history(cmd, hist);
 	if (pointer_to_first_occurence(cmd, '|') != NULL)
 		return piped_command(cmd, hist);
-	args = input_tokenizer(cmd, " ");
+	copy = (char *)malloc(1 + strlen(cmd));
+	strcpy(copy, cmd);
+	args = input_tokenizer(copy, " ");
 	flag = parse_args(args, hist);
 	free(args);
+	free(copy);
+	if (flag_2 == 1)
+		free(cmd);
 	return flag;
 }
 

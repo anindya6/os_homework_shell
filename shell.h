@@ -9,6 +9,7 @@
 #define READ_END 0
 #define WRITE_END 1
 #define MAX_PIPES 50
+#define MAX_ARGS 51
 
 
 struct history;
