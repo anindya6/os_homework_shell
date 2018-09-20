@@ -105,7 +105,7 @@ What are the advantages and disadvantages of using the same systemcall
 interface for manipulating both files and devices?
 
 
-A1.16
+A2.16
 Disadvantage: Typically the same syscalls for files and devices will possibly limit the functionality of devices
 which come with some form of enhanced capability (in terms of features or performance), more than simple I/O.
 
