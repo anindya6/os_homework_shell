@@ -130,7 +130,8 @@ Advantages:
 > It follows the principle of least privilege, as most operations will be performed in user mode as opposed to root mode.
 > Few operations actually involve modifying the kernel itself.
 
-User programs and system services interact via shared memory.
+User programs and system services interact via inter-process communication methods such as messaging, shared memory, files
+signals, etc.
 
 Disadvantages:
 > Part of the system state is lost if a server fails. If a server associated with a file fails, then all changes

@@ -10,3 +10,4 @@ https://en.wikipedia.org/wiki/Interrupt
 https://www.geeksforgeeks.org/c-program-replace-word-text-another-given-word/
 https://en.wikibooks.org/wiki/Operating_System_Design/Kernel_Architecture/Microkernel
 https://en.wikipedia.org/wiki/Time-sharing
+https://en.wikipedia.org/wiki/Inter-process_communication

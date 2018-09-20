@@ -69,11 +69,16 @@ int piped_command(char *cmd, struct history *hist)
 	pid_t pid;
 	int fd[2];
 	int status;
+	int syscall;
 
 	pipe(fd);
 	pid = fork();
 	if (pid == 0) {
-		dup2(fd[WRITE_END], STDOUT_FILENO);
+		syscall = dup2(fd[WRITE_END], STDOUT_FILENO);
+		if (syscall == -1) {
+			fprintf(stderr, "error: %s\n", strerror(errno));
+			return 0;
+		}
 		close(fd[READ_END]);
 		close(fd[WRITE_END]);
 		parse_command(cmd1, hist, 0);
@@ -83,7 +88,11 @@ int piped_command(char *cmd, struct history *hist)
 	}
 	pid = fork();
 	if (pid == 0) {
-		dup2(fd[READ_END], STDIN_FILENO);
+		syscall = dup2(fd[READ_END], STDIN_FILENO);
+		if (syscall == -1) {
+			fprintf(stderr, "error: %s\n", strerror(errno));
+			return 0;
+		}
 		close(fd[WRITE_END]);
 		close(fd[READ_END]);
 		parse_command(cmd2, hist, 0);
