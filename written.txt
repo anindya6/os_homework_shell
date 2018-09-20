@@ -112,8 +112,8 @@ which come with some form of enhanced capability (in terms of features or perfor
 Advantage:
 > Devices can be accessed like a regular file in the file system.
 > File descriptors can be opened and closed at will, including devices (such as I/O).
-> Is advantageous for programming as new devices can easily handle both devices and files in the same manner
-  because of this interface
+> Is advantageous for programming as it can easily handle both devices and files in the same manner
+  because of this interface, as well as add a new device easily.
 
 
 
